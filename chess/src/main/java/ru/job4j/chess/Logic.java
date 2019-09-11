@@ -1,10 +1,10 @@
 package ru.job4j.chess;
 
-import ru.job4j.chess.firuges.Cell;
-import ru.job4j.chess.firuges.Figure;
-
-import java.util.Arrays;
-import java.util.Optional;
+import ru.job4j.chess.exceptions.FigureNotFoundException;
+import ru.job4j.chess.exceptions.ImpossibleMoveException;
+import ru.job4j.chess.exceptions.OccupiedWayException;
+import ru.job4j.chess.figures.Cell;
+import ru.job4j.chess.figures.Figure;
 
 /**
  * //TODO add comments.
@@ -17,23 +17,43 @@ public class Logic {
     private final Figure[] figures = new Figure[32];
     private int index = 0;
 
+
     public void add(Figure figure) {
         this.figures[this.index++] = figure;
     }
 
-    public boolean move(Cell source, Cell dest) {
-        boolean rst = false;
-        int index = this.findBy(source);
-        if (index != -1) {
-            Cell[] steps = this.figures[index].way(source, dest);
-            if (steps.length > 0 && steps[steps.length - 1].equals(dest)) {
-                rst = true;
-                this.figures[index] = this.figures[index].copy(dest);
+    public boolean move(Cell source, Cell dest) throws ImpossibleMoveException, OccupiedWayException, FigureNotFoundException {
+        boolean rst = false;                  //для проверки возможности перемещения фигуры
+        int index = this.findBy(source);      //проверим, что фигура существует и сравним ее позицию, при ошибке получим -1
+        try {
+            if (index != -1) {
+                //Ищем шаги, получаем массив ячеек пути перемещения фигуры
+                Cell[] steps = this.figures[index].way(source, dest);
+                //Проверяем занятость пути другими фигурами
+                for (Cell step : steps) {
+                    if (findBy(step) != -1 || this.findBy(dest) != -1) {
+                        throw new OccupiedWayException("Путь зоблокирован. Попробуйте другой путь.");
+                    }
+
+                    //если нас все устраивает, то переместим фигуру простым копированием,
+                    //иначе оставляем фигуру на месте
+                    if (step.equals(dest)) {
+                        rst = true;
+                        this.figures[index] = this.figures[index].copy(dest);
+                    }
+                }
+            } else {
+                throw new FigureNotFoundException("Фигура не найдена!");
             }
+        } catch (ImpossibleMoveException ime) {
+            System.out.println(ime.getMessage());
+        } catch (OccupiedWayException owe) {
+            System.out.println(owe.getMessage());
         }
-        return rst;
+        return rst; //если фигура перенесена, то возвращаем true
     }
 
+    //метод удаления фигуры после переноса/удаления с поля.
     public void clean() {
         for (int position = 0; position != this.figures.length; position++) {
             this.figures[position] = null;
@@ -50,12 +70,5 @@ public class Logic {
             }
         }
         return rst;
-    }
-
-    @Override
-    public String toString() {
-        return "Logic{" +
-                "figures=" + Arrays.toString(this.figures) +
-                '}';
     }
 }
