@@ -1,6 +1,12 @@
 package job4j.tictactoe;
 
 import javafx.scene.shape.Rectangle;
+/**
+ * Класс Figure3T отвечает за клетку на поле.
+ * Он содержит методы - имееет ли клетка крестик,
+ * или нолик, или пустая.
+ */
+
 
 public class Figure3T extends Rectangle {
     private boolean markX = false;
